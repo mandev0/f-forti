@@ -1,0 +1,61 @@
+# Build output
+bin/
+gui/build/bin/
+gui/tray/*-preview.png
+*.exe
+*.msi
+*.msm
+*.wixobj
+*.wixpdb
+dist-release/
+
+# Gateway probe output (contains server, certificate and network details)
+probe*.txt
+*.probe
+captures/
+*.pcap
+*.pcapng
+
+# Local profiles, logs and settings written by the app or during testing
+*.log
+logs/
+config.local.json
+profiles*.json
+settings*.json
+
+# Secrets / certificates / signing material
+.env
+.env.*
+*.pem
+*.key
+*.crt
+*.cer
+*.pfx
+*.p12
+*.spc
+*.pvk
+*.snk
+
+# Go / Node
+*.test
+*.out
+coverage*
+node_modules/
+gui/frontend/node_modules/
+gui/frontend/package-lock.json
+
+# Editor / OS
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Claude Code local settings
+.claude/settings.local.json
+CLAUDE.local.md
+
+# msiinfo export output
+/Binary/

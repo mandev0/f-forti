@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FVPN</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+<!-- Icon sprites (Fluent-style 20px outline glyphs) -->
+<svg width="0" height="0" class="sprites" aria-hidden="true">
+  <symbol id="i-vpn" viewBox="0 0 20 20"><path d="M10 2.1 3.6 4.4v4.8c0 4 2.7 7.4 6.4 8.7 3.7-1.3 6.4-4.7 6.4-8.7V4.4L10 2.1Zm0 1.06 5.4 1.95v4.09c0 3.42-2.21 6.36-5.4 7.6-3.19-1.24-5.4-4.18-5.4-7.6V5.11L10 3.16Z"/><path d="M10 7a1.75 1.75 0 0 0-.5 3.43V12.5h1v-2.07A1.75 1.75 0 0 0 10 7Zm0 1a.75.75 0 1 1 0 1.5A.75.75 0 0 1 10 8Z"/></symbol>
+  <symbol id="i-chevron-right" viewBox="0 0 20 20"><path d="M7.65 4.15a.5.5 0 0 1 .7 0l5.5 5.5a.5.5 0 0 1 0 .7l-5.5 5.5a.5.5 0 0 1-.7-.7L12.79 10 7.65 4.85a.5.5 0 0 1 0-.7Z"/></symbol>
+  <symbol id="i-chevron-down" viewBox="0 0 20 20"><path d="M4.15 7.65a.5.5 0 0 1 .7 0L10 12.79l5.15-5.14a.5.5 0 0 1 .7.7l-5.5 5.5a.5.5 0 0 1-.7 0l-5.5-5.5a.5.5 0 0 1 0-.7Z"/></symbol>
+  <symbol id="i-power" viewBox="0 0 20 20"><path d="M10 2.5a.5.5 0 0 1 .5.5v6.5a.5.5 0 0 1-1 0V3a.5.5 0 0 1 .5-.5ZM6.6 4.6a.5.5 0 0 1-.15.69 5.5 5.5 0 1 0 7.1 0 .5.5 0 1 1 .65-.76 6.5 6.5 0 1 1-8.4 0 .5.5 0 0 1 .8.07Z"/></symbol>
+  <symbol id="i-doc" viewBox="0 0 20 20"><path d="M6 2a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7.41a1.5 1.5 0 0 0-.44-1.06l-3.91-3.91A1.5 1.5 0 0 0 10.59 2H6Zm-1 2a1 1 0 0 1 1-1h4v3.5A1.5 1.5 0 0 0 11.5 8H15v8a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4Zm9.79 3H11.5a.5.5 0 0 1-.5-.5V3.21L14.79 7ZM7 10.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5Zm0 2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5Zm.5 1.5a.5.5 0 0 0 0 1h3a.5.5 0 0 0 0-1h-3Z"/></symbol>
+  <symbol id="i-dismiss" viewBox="0 0 20 20"><path d="M4.09 4.22a.5.5 0 0 1 .7-.06l.07.06L10 9.29l5.15-5.07a.5.5 0 0 1 .76.64l-.06.07L10.71 10l5.14 5.15a.5.5 0 0 1-.64.76l-.07-.06L10 10.71l-5.15 5.14a.5.5 0 0 1-.76-.64l.06-.07L9.29 10 4.15 4.85a.5.5 0 0 1-.06-.63Z"/></symbol>
+  <symbol id="i-err" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7"/><path class="g" d="M5.6 5.6 10.4 10.4M10.4 5.6 5.6 10.4"/></symbol>
+</svg>
+
+<main class="page">
+
+  <!-- ===== Main page ===== -->
+  <div id="pgMain">
+    <h1 class="title">VPN</h1>
+
+    <div id="svcBar" class="infobar sev-err" hidden>
+      <svg class="ib-icon"><use href="#i-err"/></svg>
+      <div class="ib-text"><strong>Servise bağlanılamıyor</strong> <span id="svcMsg"></span></div>
+    </div>
+
+    <div id="errBar" class="infobar sev-err" hidden>
+      <svg class="ib-icon"><use href="#i-err"/></svg>
+      <div class="ib-text"><strong>Bağlantı kurulamadı</strong> <span id="errMsg"></span></div>
+      <button id="errClose" class="ib-close" title="Kapat"><svg><use href="#i-dismiss"/></svg></button>
+    </div>
+
+    <div class="group">
+      <div class="card row">
+        <div class="row-text">
+          <div class="row-title">VPN bağlantıları</div>
+        </div>
+        <button id="btnAddProfile" class="btn">Profil ekle</button>
+      </div>
+      <div id="profileCards" class="group"></div>
+    </div>
+
+    <h2 class="section">İlgili ayarlar</h2>
+    <div class="group">
+      <div class="card row">
+        <svg class="row-icon"><use href="#i-power"/></svg>
+        <div class="row-text">
+          <div class="row-title">Oturum açılınca başlat</div>
+          <div class="row-desc">FVPN bildirim alanında açılır</div>
+        </div>
+        <label class="toggle">
+          <span id="autostartText" class="toggle-text">Kapalı</span>
+          <input id="autostart" type="checkbox" role="switch">
+          <span class="toggle-track"></span>
+        </label>
+      </div>
+      <button id="btnLogs" class="card row row-nav">
+        <svg class="row-icon"><use href="#i-doc"/></svg>
+        <span class="row-text">
+          <span class="row-title">Servis günlüğü</span>
+          <span class="row-desc">Bağlantı adımları ve hatalar</span>
+        </span>
+        <svg class="chev"><use href="#i-chevron-right"/></svg>
+      </button>
+    </div>
+
+    <p id="ver" class="caption footer-ver"></p>
+  </div>
+
+  <!-- ===== Profile edit ===== -->
+  <div id="pgEdit" hidden>
+    <h1 class="title crumbs"><button id="crumbEdit" class="crumb">VPN</button><svg class="crumb-sep"><use href="#i-chevron-right"/></svg><span id="editTitle">Profil ekle</span></h1>
+
+    <div class="group">
+      <div class="card row">
+        <div class="row-text"><div class="row-title">Bağlantı adı</div></div>
+        <input id="eName" class="textbox w-field" maxlength="64" spellcheck="false">
+      </div>
+      <div class="card row">
+        <div class="row-text">
+          <div class="row-title">Sunucu</div>
+          <div class="row-desc">Ad veya adres ve port</div>
+        </div>
+        <input id="eServer" class="textbox w-field" maxlength="255" spellcheck="false" placeholder="vpn.example.com:10443">
+      </div>
+      <div class="card row">
+        <div class="row-text">
+          <div class="row-title">Realm</div>
+          <div class="row-desc">İsteğe bağlı</div>
+        </div>
+        <input id="eRealm" class="textbox w-field" maxlength="64" spellcheck="false">
+      </div>
+    </div>
+
+    <h2 class="section">Sunucu sertifikası</h2>
+    <div class="group">
+      <div class="card row">
+        <div class="row-text">
+          <div id="certTitle" class="row-title">Kontrol edilmedi</div>
+          <div id="certDesc" class="row-desc">Kaydetmeden önce sertifikayı kontrol edin</div>
+        </div>
+        <div class="ring ring-sm" id="certRing" hidden><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.5"/></svg></div>
+        <button id="btnCheckCert" class="btn">Kontrol et</button>
+      </div>
+      <div id="certDetails" class="card props" hidden>
+        <dl class="props-list">
+          <dt>Verilen</dt><dd id="certSubject"></dd>
+          <dt>Veren</dt><dd id="certIssuer"></dd>
+          <dt>Son geçerlilik</dt><dd id="certExpiry"></dd>
+          <dt>SHA-256</dt><dd id="certFp" class="mono"></dd>
+        </dl>
+        <label id="pinRow" class="checkbox" hidden><input id="ePin" type="checkbox"><span>Bu sertifikaya güven</span></label>
+      </div>
+    </div>
+
+    <div id="editBar" class="infobar sev-err" hidden>
+      <svg class="ib-icon"><use href="#i-err"/></svg>
+      <div class="ib-text"><span id="editMsg"></span></div>
+    </div>
+
+    <div class="actions">
+      <button id="btnSaveProfile" class="btn btn-accent">Kaydet</button>
+      <button id="btnCancelEdit" class="btn">İptal</button>
+    </div>
+  </div>
+
+  <!-- ===== Logs ===== -->
+  <div id="pgLogs" hidden>
+    <h1 class="title crumbs"><button id="crumbLogs" class="crumb">VPN</button><svg class="crumb-sep"><use href="#i-chevron-right"/></svg><span>Servis günlüğü</span></h1>
+    <div class="actions actions-top">
+      <button id="btnLogsRefresh" class="btn">Yenile</button>
+      <button id="btnLogsCopy" class="btn">Kopyala</button>
+    </div>
+    <div class="card logbox"><pre id="logs" class="mono"></pre></div>
+  </div>
+</main>
+
+<!-- Profile card template -->
+<template id="tplCard">
+  <div class="expander">
+    <div class="card row exp-head">
+      <svg class="row-icon"><use href="#i-vpn"/></svg>
+      <div class="row-text">
+        <div class="row-title pc-name"></div>
+        <div class="row-desc pc-desc"></div>
+      </div>
+      <div class="ring ring-sm pc-ring" hidden><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.5"/></svg></div>
+      <button class="btn pc-action"></button>
+      <button class="exp-toggle pc-toggle" title="Ayrıntılar"><svg><use href="#i-chevron-down"/></svg></button>
+    </div>
+  </div>
+</template>
+
+<!-- Shared expander body; moved under the open card -->
+<div id="panel" class="exp-body" hidden>
+  <div id="pLogin" class="exp-section">
+    <div class="field-row">
+      <label for="user">Kullanıcı adı</label>
+      <input id="user" class="textbox" autocomplete="username" spellcheck="false" maxlength="128">
+    </div>
+    <div class="field-row">
+      <label for="pass">Parola</label>
+      <input id="pass" class="textbox" type="password" autocomplete="current-password" maxlength="512">
+    </div>
+    <div id="loginBar" class="infobar sev-err" hidden>
+      <svg class="ib-icon"><use href="#i-err"/></svg>
+      <div class="ib-text"><span id="loginMsg"></span></div>
+    </div>
+    <div class="actions">
+      <button id="btnConnect" class="btn btn-accent">Bağlan</button>
+    </div>
+  </div>
+
+  <div id="pCode" class="exp-section">
+    <p id="chalMsg" class="body-text"></p>
+    <div class="field-row">
+      <label for="code">Doğrulama kodu</label>
+      <input id="code" class="textbox" inputmode="numeric" autocomplete="one-time-code" maxlength="10" spellcheck="false">
+    </div>
+    <p id="chalLeft" class="caption"></p>
+    <div id="codeBar" class="infobar sev-err" hidden>
+      <svg class="ib-icon"><use href="#i-err"/></svg>
+      <div class="ib-text"><span id="codeMsg"></span></div>
+    </div>
+    <div class="actions">
+      <button id="btnCode" class="btn btn-accent">Doğrula</button>
+      <button id="btnCancelCode" class="btn">İptal</button>
+    </div>
+  </div>
+
+  <div id="pUp" class="exp-section">
+    <table id="upTable" class="props-table">
+      <tbody>
+        <tr><th>IPv4 adresi</th><td id="upIP"></td></tr>
+        <tr><th>Kullanıcı</th><td id="upUser"></td></tr>
+        <tr><th>Bağlantı süresi</th><td id="upFor"></td></tr>
+        <tr><th>Oturum sonu</th><td id="upExp"></td></tr>
+        <tr><th>Rotalar</th><td id="upRoutes"></td></tr>
+        <tr><th>DNS sunucuları</th><td id="upDNS"></td></tr>
+        <tr><th>Alınan</th><td id="upRx"></td></tr>
+        <tr><th>Gönderilen</th><td id="upTx"></td></tr>
+      </tbody>
+    </table>
+    <div class="actions">
+      <button id="btnCopyProps" class="btn">Kopyala</button>
+    </div>
+  </div>
+
+  <div id="pManage" class="exp-section exp-foot">
+    <span id="pServer" class="caption"></span>
+    <div class="actions">
+      <button id="btnEditProfile" class="btn">Düzenle</button>
+      <button id="btnRemoveProfile" class="btn">Kaldır</button>
+    </div>
+  </div>
+</div>
+
+<!-- ContentDialog -->
+<div id="dlg" class="smoke" hidden>
+  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dlgTitle">
+    <div class="dialog-body">
+      <h2 id="dlgTitle" class="subtitle"></h2>
+      <p id="dlgText" class="body-text"></p>
+    </div>
+    <div class="dialog-foot">
+      <button id="dlgPrimary" class="btn btn-accent"></button>
+      <button id="dlgSecondary" class="btn"></button>
+      <button id="dlgClose" class="btn">Vazgeç</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  FVPN per-machine MSI, built on Linux with wixl (msitools):
+
+    wixl -a x64 -D Version=X.Y.Z -D BinDir=bin/windows -o FVPN-X.Y.Z.msi installer/fvpn.wxs
+
+  Windows Installer does the work itself (files, service, shortcut, upgrade,
+  Apps & features); fvpn-svc only runs once, as SYSTEM, to prepare the data
+  dir and the allowed user (msi-configure). Optional property:
+
+    msiexec /i FVPN.msi ALLOWUSER=DOMAIN\name     (default: signed-in user)
+
+  Configuration and logs in %ProgramData%\FVPN survive uninstall and upgrade.
+-->
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Product Id="*" Name="FVPN" Language="1033" Version="$(var.Version)"
+           Manufacturer="FVPN" UpgradeCode="87cf7383-1b11-4d50-8fa6-3ac60e2525a1">
+    <Package InstallerVersion="500" Compressed="yes" InstallScope="perMachine"
+             Description="FVPN $(var.Version)" Comments="FortiGate SSL-VPN client" />
+    <Media Id="1" Cabinet="fvpn.cab" EmbedCab="yes" />
+
+    <MajorUpgrade AllowSameVersionUpgrades="yes" DowngradeErrorMessage="A newer version of FVPN is already installed." />
+
+    <Icon Id="fvpn.ico" SourceFile="gui/build/windows/icon.ico" />
+    <Property Id="ARPPRODUCTICON" Value="fvpn.ico" />
+    <Property Id="ARPNOMODIFY" Value="1" />
+    <Property Id="ALLOWUSER" Secure="yes" />
+    <!-- Always write our files. wixl leaves File.Version empty, so Windows
+         Installer would keep any existing *versioned* exe in the folder (e.g.
+         fvpn-gui.exe left by the old "fvpn-svc install") instead of
+         replacing it. Every file in INSTALLDIR is ours. -->
+    <Property Id="REINSTALLMODE" Value="amus" />
+
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramFiles64Folder">
+        <Directory Id="INSTALLDIR" Name="FVPN">
+          <Component Id="Service" Guid="*" Win64="yes">
+            <File Id="svc" Name="fvpn-svc.exe" Source="$(var.BinDir)/fvpn-svc.exe" KeyPath="yes" />
+            <ServiceInstall Id="Svc" Name="fvpn" DisplayName="FVPN SSL-VPN"
+                            Description="FortiGate SSL-VPN client service (FVPN)"
+                            Type="ownProcess" Start="auto" ErrorControl="normal"
+                            Arguments="service">
+              <ServiceDependency Id="Nsi" />
+              <ServiceDependency Id="Tcpip" />
+            </ServiceInstall>
+            <!-- Remove="both" also removes a service left by the old
+                 "fvpn-svc install" before InstallServices recreates it. -->
+            <ServiceControl Id="SvcCtl" Name="fvpn" Start="install" Stop="both"
+                            Remove="both" Wait="yes" />
+          </Component>
+          <Component Id="Wintun" Guid="*" Win64="yes">
+            <File Id="wintun" Name="wintun.dll" Source="$(var.BinDir)/wintun.dll" KeyPath="yes" />
+          </Component>
+          <Component Id="WintunLicense" Guid="*" Win64="yes">
+            <File Id="wintunlic" Name="wintun-LICENSE.txt" Source="$(var.BinDir)/wintun-LICENSE.txt" KeyPath="yes" />
+          </Component>
+          <Component Id="Ctl" Guid="*" Win64="yes">
+            <File Id="ctl" Name="fvpn-ctl.exe" Source="$(var.BinDir)/fvpn-ctl.exe" KeyPath="yes" />
+          </Component>
+          <Component Id="Gui" Guid="*" Win64="yes">
+            <File Id="gui" Name="fvpn-gui.exe" Source="$(var.BinDir)/fvpn-gui.exe" KeyPath="yes">
+              <Shortcut Id="GuiStartMenu" Directory="ProgramMenuFolder" Name="FVPN"
+                        Description="FVPN SSL-VPN client" WorkingDirectory="INSTALLDIR" Advertise="no" />
+            </File>
+          </Component>
+        </Directory>
+      </Directory>
+      <Directory Id="ProgramMenuFolder" />
+    </Directory>
+
+    <Feature Id="Main" Level="1">
+      <ComponentRef Id="Service" />
+      <ComponentRef Id="Wintun" />
+      <ComponentRef Id="WintunLicense" />
+      <ComponentRef Id="Ctl" />
+      <ComponentRef Id="Gui" />
+    </Feature>
+
+    <!-- Close running GUIs before InstallValidate checks for files in use;
+         only when an installed copy exists (repair/uninstall, or upgrade of
+         an older version, which lives in the same folder). fvpn-closegui
+         comes from this package's Binary table, so its logic is always the
+         new version's: ask the app to quit, wait for it, terminate leftovers.
+         Synchronous, and never fails the install. -->
+    <Binary Id="CloseGuiBin" SourceFile="$(var.BinDir)/fvpn-closegui.exe" />
+    <CustomAction Id="SetGuiExe" Property="GUIEXE" Value="[INSTALLDIR]fvpn-gui.exe" />
+    <!-- wixl cannot write BinaryKey exe actions (type 2); build.sh turns
+         this placeholder into Type 66 (2 + ignore return), Source CloseGuiBin. -->
+    <CustomAction Id="CloseGui" Property="GUIEXE" ExeCommand="&quot;[INSTALLDIR]fvpn-gui.exe&quot;" Return="ignore" />
+    <!-- Uninstall only: drop the user's "Start at login" entry. -->
+    <CustomAction Id="RemoveAutostart" Property="GUIEXE" ExeCommand="--remove-autostart" Return="ignore" />
+    <!-- As SYSTEM, after the service is registered and before it starts. -->
+    <CustomAction Id="Configure" FileKey="svc" ExeCommand="msi-configure -allow &quot;[ALLOWUSER]&quot;"
+                  Execute="deferred" Impersonate="no" Return="check" />
+    <!-- Interactive installs: open the app when done. -->
+    <!-- Not FileKey: after InstallFinalize the file is no longer "marked for
+         installation" and Windows Installer fails with error 2753. -->
+    <CustomAction Id="LaunchGui" Property="GUIEXE" ExeCommand="" Return="asyncNoWait" />
+
+    <InstallExecuteSequence>
+      <!-- wixl misplaces Before="InstallValidate"; CostFinalize (1000) is
+           after FindRelatedProducts and resolves INSTALLDIR. -->
+      <Custom Action="SetGuiExe" After="CostFinalize" />
+      <Custom Action="CloseGui" After="SetGuiExe">Installed OR WIX_UPGRADE_DETECTED OR WIX_SAME_VERSION_UPGRADE_DETECTED</Custom>
+      <Custom Action="RemoveAutostart" After="CloseGui">REMOVE~="ALL" AND NOT UPGRADINGPRODUCTCODE</Custom>
+      <Custom Action="Configure" After="InstallServices">NOT REMOVE~="ALL"</Custom>
+      <Custom Action="LaunchGui" After="InstallFinalize">NOT Installed AND NOT REMOVE AND UILevel &gt; 2</Custom>
+    </InstallExecuteSequence>
+  </Product>
+</Wix>

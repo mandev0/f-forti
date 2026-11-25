@@ -1,0 +1,18 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "fvpn-gui",
+  "outputfilename": "fvpn-gui",
+  "frontend:install": "",
+  "frontend:build": "",
+  "frontend:dir": "frontend",
+  "author": {
+    "name": "FVPN"
+  },
+  "info": {
+    "companyName": "FVPN",
+    "productName": "FVPN",
+    "productVersion": "0.9.4",
+    "copyright": "FVPN",
+    "comments": "FortiGate SSL-VPN client"
+  }
+}
