@@ -10,6 +10,17 @@ set -euo pipefail
 cd "$(dirname "$0")"
 export PATH="$HOME/.local/opt/go/bin:$HOME/go/bin:$HOME/.local/opt/node/bin:$PATH"
 
+MSITOOLS="$HOME/.local/opt/msitools/root"
+missing=()
+for t in go wails; do command -v "$t" >/dev/null || missing+=("$t"); done
+if [ ! -x "$MSITOOLS/usr/bin/wixl" ]; then
+  for t in wixl msibuild msiinfo; do command -v "$t" >/dev/null || missing+=("$t"); done
+fi
+if [ ${#missing[@]} -gt 0 ]; then
+  echo "missing tools: ${missing[*]} (see CONTRIBUTING.md › Building)" >&2
+  exit 1
+fi
+
 OUT=bin/windows
 mkdir -p "$OUT"
 
@@ -37,7 +48,6 @@ for c in fvpn-probe fvpn-cli; do
 done
 
 echo "== msi"
-MSITOOLS="$HOME/.local/opt/msitools/root"
 if [ -x "$MSITOOLS/usr/bin/wixl" ]; then
   msitool() { local t=$1; shift; LD_LIBRARY_PATH="$MSITOOLS/usr/lib/x86_64-linux-gnu" "$MSITOOLS/usr/bin/$t" "$@"; }
 else

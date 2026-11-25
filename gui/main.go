@@ -36,7 +36,6 @@ func main() {
 
 	// NetBird-style window: fixed 380x660 main view (900 wide for settings),
 	// opaque background matching the page's base gray in the system theme.
-	// Earlier variants live in gui/frontend/_alt/ (fluent used Mica).
 	const useMica = false
 	mica := useMica && isWindows11()
 	bg := &options.RGBA{R: 243, G: 243, B: 243, A: 255}
