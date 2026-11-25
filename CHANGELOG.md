@@ -4,7 +4,7 @@ All notable changes to FVPN are listed here. Versions follow
 [Semantic Versioning](https://semver.org/); before 1.0, minor versions may
 include breaking changes.
 
-## Unreleased
+## 0.9.5 (2026-11-25)
 
 ### Added
 
