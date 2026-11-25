@@ -64,6 +64,11 @@ Cross-compiled from Linux:
 
 `go test ./...` runs the protocol, PPP, routing and engine tests on any OS.
 
+CI ([.github/workflows/build.yml](.github/workflows/build.yml)) runs the same
+script on every push and pull request and uploads the binaries and MSI as an
+artifact. Pushing a tag `vX.Y.Z` (matching `version` in `gui/main.go`) creates
+a draft release with the MSI and `SHA256SUMS`.
+
 ## Security notes
 
 - Passwords are never stored; reconnecting requires full re-authentication.

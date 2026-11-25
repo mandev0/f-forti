@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Builds the Windows binaries into bin/windows, the installer bin/FVPN-<version>.msi
 # and the Linux test tools into bin/.
-# MSI tooling (wixl, no root needed): unpacked from the Ubuntu msitools/wixl
-# packages into ~/.local/opt/msitools (apt-get download + dpkg -x).
+# MSI tooling: wixl/msibuild/msiinfo from the system (apt install wixl
+# msitools, as in CI) or, without root, unpacked from the Ubuntu packages
+# into ~/.local/opt/msitools/root (apt-get download + dpkg -x).
 # Symbols are kept on purpose (no -s -w): stripped Go binaries score worse
 # with AV heuristics, and there is no packer (UPX) either.
 set -euo pipefail
@@ -37,19 +38,25 @@ done
 
 echo "== msi"
 MSITOOLS="$HOME/.local/opt/msitools/root"
+if [ -x "$MSITOOLS/usr/bin/wixl" ]; then
+  msitool() { local t=$1; shift; LD_LIBRARY_PATH="$MSITOOLS/usr/lib/x86_64-linux-gnu" "$MSITOOLS/usr/bin/$t" "$@"; }
+else
+  msitool() { "$@"; }
+fi
 MSI="bin/FVPN-$VERSION.msi"
-LD_LIBRARY_PATH="$MSITOOLS/usr/lib/x86_64-linux-gnu" "$MSITOOLS/usr/bin/wixl" \
+rm -f "$MSI"   # never let a stale MSI pass the check below
+msitool wixl \
   -a x64 -D Version="$VERSION" -D BinDir="$OUT" -o "$MSI" installer/fvpn.wxs \
   2>&1 | grep -v 'builder.vala:.*unimplemented' || true
 [ -s "$MSI" ] || { echo "wixl failed" >&2; exit 1; }
 # wixl only writes advertised shortcuts; point the Start menu entry at the exe.
-LD_LIBRARY_PATH="$MSITOOLS/usr/lib/x86_64-linux-gnu" "$MSITOOLS/usr/bin/msibuild" "$MSI" \
+msitool msibuild "$MSI" \
   -q "UPDATE \`Shortcut\` SET \`Target\` = '[#gui]' WHERE \`Shortcut\` = 'GuiStartMenu'"
 # wixl cannot write exe-from-Binary actions; make CloseGui run fvpn-closegui
 # from the Binary table (type 2 + 64 = continue on error, synchronous).
-LD_LIBRARY_PATH="$MSITOOLS/usr/lib/x86_64-linux-gnu" "$MSITOOLS/usr/bin/msibuild" "$MSI" \
+msitool msibuild "$MSI" \
   -q "UPDATE \`CustomAction\` SET \`Type\` = 66, \`Source\` = 'CloseGuiBin' WHERE \`Action\` = 'CloseGui'"
-LD_LIBRARY_PATH="$MSITOOLS/usr/lib/x86_64-linux-gnu" "$MSITOOLS/usr/bin/msiinfo" export "$MSI" CustomAction \
+msitool msiinfo export "$MSI" CustomAction \
   | grep -qP '^CloseGui\t66\tCloseGuiBin\t' || { echo "CloseGui custom action patch failed" >&2; exit 1; }
 
 (cd "$OUT" && sha256sum *.exe wintun.dll | tee SHA256SUMS)

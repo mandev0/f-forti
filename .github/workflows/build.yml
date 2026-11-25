@@ -1,0 +1,67 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Install Wails CLI and msitools
+        run: |
+          go install github.com/wailsapp/wails/v2/cmd/wails@$(go list -m -f '{{.Version}}' github.com/wailsapp/wails/v2)
+          sudo apt-get update -q
+          sudo apt-get install -y -q --no-install-recommends wixl msitools
+
+      - name: Check tag matches the app version
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          v=$(sed -n 's/^const version = "\(.*\)"/\1/p' gui/main.go)
+          [ "v$v" = "$GITHUB_REF_NAME" ] || { echo "tag $GITHUB_REF_NAME != gui/main.go version $v" >&2; exit 1; }
+
+      - name: Build (vet, tests, Windows binaries, MSI)
+        run: ./build.sh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fvpn-windows
+          path: |
+            bin/FVPN-*.msi
+            bin/windows/*.exe
+            bin/windows/wintun.dll
+            bin/windows/SHA256SUMS
+          if-no-files-found: error
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: fvpn-windows
+      - name: Create draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          (cd windows && sha256sum ../FVPN-*.msi | sed 's#\.\./##' >> SHA256SUMS)
+          gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --draft \
+            --title "FVPN ${GITHUB_REF_NAME#v}" --generate-notes \
+            FVPN-*.msi windows/SHA256SUMS
