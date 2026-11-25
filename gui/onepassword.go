@@ -36,6 +36,7 @@ type OPCheck struct {
 	HasPassword bool   `json:"hasPassword"`
 	HasOTP      bool   `json:"hasOtp"`      // in the item the code is read from
 	SeparateOTP bool   `json:"separateOtp"` // the code comes from another item
+	ManualOTP   bool   `json:"manualOtp"`   // the user enters the code
 }
 
 var errOPOff = errors.New("1Password: the integration is turned off in Settings")
@@ -205,6 +206,9 @@ func opCredentials(ctx context.Context, c OPConfig) (opcli.Credentials, error) {
 	}
 	cr, err := opcli.ParseItem(out)
 	clear(out)
+	if c.ManualOTP {
+		cr.HasOTP = false // never read, even if the item has one
+	}
 	if err != nil || !c.SeparateOTP() {
 		return cr, err
 	}
@@ -336,11 +340,12 @@ func (a *App) Test1Password(c OPConfig) (OPCheck, error) {
 	if err != nil {
 		return OPCheck{}, fmt.Errorf("1Password: %w", err)
 	}
-	return OPCheck{Username: cr.Username, HasPassword: cr.Password != "", HasOTP: cr.HasOTP, SeparateOTP: c.SeparateOTP()}, nil
+	return OPCheck{Username: cr.Username, HasPassword: cr.Password != "", HasOTP: cr.HasOTP, SeparateOTP: c.SeparateOTP(), ManualOTP: c.ManualOTP}, nil
 }
 
 // ConnectWith1Password signs in with credentials from 1Password and answers
-// the verification request with the item's one-time password. Errors that
+// the verification request with the item's one-time password. With ManualOTP
+// it stops at the verification request and the UI asks for the code. Errors that
 // come from 1Password start with "1Password:" so the UI can fall back to
 // manual entry; other errors come from the service.
 func (a *App) ConnectWith1Password(profile string) (*ipc.Status, error) {
@@ -372,7 +377,7 @@ func (a *App) ConnectWith1Password(profile string) (*ipc.Status, error) {
 		return statusOf(resp), friendlyErr(err)
 	}
 	st := statusOf(resp)
-	if st == nil || st.State != ipc.StateNeed2FA {
+	if st == nil || st.State != ipc.StateNeed2FA || c.ManualOTP {
 		return st, nil
 	}
 	if !hasOTP {

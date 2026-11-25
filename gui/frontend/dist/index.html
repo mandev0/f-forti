@@ -95,7 +95,7 @@
             <div class="toggle-row">
               <div>
                 <label class="label" for="opOn">1Password</label>
-                <p class="help">Sign in with credentials and one-time passwords from the 1Password app.</p>
+                <p class="help">Sign in with credentials (and optionally one-time passwords) from the 1Password app.</p>
                 <p id="opToolState" class="help" hidden></p>
               </div>
               <button id="opOn" class="switch" role="switch" aria-checked="false"><span class="thumb"></span></button>
@@ -282,7 +282,14 @@
                 <input id="opAccount" class="input" maxlength="128" spellcheck="false" placeholder="my.1password.com">
               </div>
             </div>
-            <label class="check"><input id="opSep" type="checkbox"><span>One-time password from another item</span></label>
+            <div class="field" role="radiogroup" aria-labelledby="opOtpLabel">
+              <span id="opOtpLabel" class="label">One-time password</span>
+              <div class="op-radios">
+                <label class="check"><input type="radio" name="opOtpMode" value="item" checked><span>From the same item</span></label>
+                <label class="check"><input type="radio" name="opOtpMode" value="separate"><span>From another 1Password item</span></label>
+                <label class="check"><input type="radio" name="opOtpMode" value="manual"><span>Enter it myself (authenticator app, token)</span></label>
+              </div>
+            </div>
             <div id="opOtpFields" class="op-fields op-sub" hidden>
               <div class="field">
                 <label class="label" for="opOtpItem">One-time password item</label>

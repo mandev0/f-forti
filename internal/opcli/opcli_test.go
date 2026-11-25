@@ -119,10 +119,17 @@ func TestConfig(t *testing.T) {
 		{Enabled: true, Item: "VPN", OTPItem: "--reveal"},                       // flag injection
 		{Enabled: true, Item: "VPN", Vault: "W", OTPItem: "VPN", OTPVault: "W"}, // same item twice
 		{Enabled: true, Item: "", OTPItem: "code"},                              // no login item
+		{Enabled: true, Item: "VPN", OTPItem: "code", ManualOTP: true},          // manual and separate
 	} {
 		if bad.Validate() == nil {
 			t.Errorf("accepted %+v", bad)
 		}
+	}
+	if m := (Config{Enabled: true, Item: "VPN", ManualOTP: true}); m.Validate() != nil || m.SeparateOTP() {
+		t.Errorf("manual code: %+v", m)
+	}
+	if (Config{ManualOTP: true}).Empty() {
+		t.Error("manual flag alone is not empty")
 	}
 	if !(Config{}).Empty() || (Config{}).Validate() != nil {
 		t.Error("empty config must be valid")

@@ -45,7 +45,8 @@ func (r Ref) Args(extra ...string) []string {
 // Username and password come from Item. The one-time password comes from
 // OTPItem when it is set, otherwise from Item too. Keeping the TOTP seed in
 // another item (ideally another vault) keeps the two factors apart: access
-// to one item no longer gives both.
+// to one item no longer gives both. With ManualOTP the code is not read from
+// 1Password at all: the user types it from their own authenticator app.
 type Config struct {
 	Enabled bool   `json:"enabled"`
 	Item    string `json:"item"`              // item name or ID
@@ -55,6 +56,8 @@ type Config struct {
 	OTPItem    string `json:"otpItem,omitempty"`
 	OTPVault   string `json:"otpVault,omitempty"`
 	OTPAccount string `json:"otpAccount,omitempty"`
+
+	ManualOTP bool `json:"manualOtp,omitempty"` // the user enters the code
 }
 
 // Trimmed returns c with surrounding spaces removed from every name.
@@ -81,7 +84,7 @@ func (c Config) OTPRef() Ref {
 
 // Empty reports whether nothing is configured.
 func (c Config) Empty() bool {
-	return !c.Enabled && c.Item == "" && c.Vault == "" && c.Account == "" && !c.SeparateOTP()
+	return !c.Enabled && c.Item == "" && c.Vault == "" && c.Account == "" && !c.SeparateOTP() && !c.ManualOTP
 }
 
 // Validate checks both references. A disabled, empty config is valid.
@@ -91,6 +94,9 @@ func (c Config) Validate() error {
 	}
 	if err := c.CredRef().Validate(); err != nil {
 		return err
+	}
+	if c.ManualOTP && c.SeparateOTP() {
+		return errors.New("a one-time password item is set although the code is entered manually")
 	}
 	if c.SeparateOTP() {
 		if err := c.OTPRef().Validate(); err != nil {

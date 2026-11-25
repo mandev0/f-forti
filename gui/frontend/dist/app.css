@@ -301,6 +301,10 @@ svg[class^="ic"], svg[class*=" ic"] {
 .op-fields { margin-top: 16px; display: flex; flex-direction: column; gap: 16px; }
 .op-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .op-sub { margin-top: 0; }
+.op-radios { display: flex; flex-direction: column; gap: 10px; }
+.check input[type="radio"] { border-radius: 50%; }
+.check input[type="radio"]:checked { background: radial-gradient(circle, white 0 3px, var(--accent) 3.5px); }
+.check input:focus-visible { box-shadow: 0 0 0 2px rgb(var(--g940)), 0 0 0 4px rgb(var(--g500) / .25); }
 .op-ok { color: rgb(var(--g200)); }
 .cert-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .cert-box { margin-top: 12px; padding: 12px; border-radius: 8px; border: 1px solid rgb(var(--g800)); background: rgb(var(--g930) / .6); display: flex; flex-direction: column; gap: 12px; }

@@ -358,8 +358,9 @@ function onToggle() {
 function opFor(id) { return (init.onePassword && init.onePassword[id]) || { enabled: false, item: "", vault: "", account: "" }; }
 function opActive(id) { return !!init.onePasswordOn && opFor(id).enabled; }
 
-// Sign in with 1Password: credentials and the one-time code are fetched and
-// submitted by the Go side; nothing secret passes through this page.
+// Sign in with 1Password: credentials (and the one-time code, unless the user
+// enters it) are fetched and submitted by the Go side; nothing secret passes
+// through this page.
 async function autoConnect() {
   if (opBusy) return;
   const id = selId;
@@ -384,6 +385,8 @@ async function autoConnect() {
     opBusy = false;
     opPhase = "";
     render();
+    // Manual code (or a challenge left open): ask for it right away.
+    if (st() === "need_2fa" && dlgOpen !== "dlgCode" && dlgOpen !== "dlgMsg") openCode();
   }
 }
 
@@ -465,7 +468,7 @@ function openProfileDialog(p) {
   $("opOtpItem").value = op.otpItem || "";
   $("opOtpVault").value = op.otpVault || "";
   $("opOtpAccount").value = op.otpAccount || "";
-  setOtpUI(!!(op.otpItem || op.otpVault || op.otpAccount));
+  setOtpUI(op.manualOtp ? "manual" : (op.otpItem || op.otpVault || op.otpAccount) ? "separate" : "item");
   show("opSection", !!init.onePasswordOn);
   text("opState", "");
   openDialog("dlgProfile");
@@ -516,7 +519,7 @@ async function saveProfile() {
   if (!server) { fieldErr("pErr", "Enter the server address"); return; }
   const op = opForm();
   if (init.onePasswordOn && op.enabled && !op.item) { fieldErr("pErr", "Enter the 1Password item"); $("opItem").focus(); return; }
-  if (init.onePasswordOn && op.enabled && $("opSep").checked && !op.otpItem) { fieldErr("pErr", "Enter the 1Password item for the one-time password"); $("opOtpItem").focus(); return; }
+  if (init.onePasswordOn && op.enabled && otpMode() === "separate" && !op.otpItem) { fieldErr("pErr", "Enter the 1Password item for the one-time password"); $("opOtpItem").focus(); return; }
   let pin = "";
   const same = editing && server === editing.server;
   if (cert) {
@@ -561,13 +564,18 @@ function setOpUI(on) {
   show("opFields", !!on);
 }
 
-function setOtpUI(on) {
-  $("opSep").checked = !!on;
-  show("opOtpFields", !!on);
+function otpMode() {
+  const r = document.querySelector('input[name="opOtpMode"]:checked');
+  return r ? r.value : "item";
+}
+
+function setOtpUI(mode) {
+  for (const r of document.querySelectorAll('input[name="opOtpMode"]')) r.checked = r.value === mode;
+  show("opOtpFields", mode === "separate");
 }
 
 function opForm() {
-  const sep = $("opSep").checked;
+  const mode = otpMode(), sep = mode === "separate";
   return {
     enabled: $("opEnabled").getAttribute("aria-checked") === "true",
     item: $("opItem").value.trim(),
@@ -576,20 +584,24 @@ function opForm() {
     otpItem: sep ? $("opOtpItem").value.trim() : "",
     otpVault: sep ? $("opOtpVault").value.trim() : "",
     otpAccount: sep ? $("opOtpAccount").value.trim() : "",
+    manualOtp: mode === "manual",
   };
 }
 
 async function testOP() {
   const op = opForm();
   if (!op.item) { $("opItem").focus(); return; }
-  if ($("opSep").checked && !op.otpItem) { $("opOtpItem").focus(); return; }
+  if (otpMode() === "separate" && !op.otpItem) { $("opOtpItem").focus(); return; }
   const s = $("opState");
   s.classList.remove("op-ok");
   s.textContent = "Waiting for 1Password...";
   $("opTest").disabled = true;
   try {
     const r = await api().Test1Password(op);
-    const parts = [r.username || "no username", r.hasPassword ? "password found" : "no password", r.hasOtp ? (r.separateOtp ? "one-time password found in the other item" : "one-time password found") : (r.separateOtp ? "no one-time password in the other item" : "no one-time password")];
+    const otp = r.manualOtp ? "code entered manually"
+      : r.hasOtp ? (r.separateOtp ? "one-time password found in the other item" : "one-time password found")
+      : (r.separateOtp ? "no one-time password in the other item" : "no one-time password");
+    const parts = [r.username || "no username", r.hasPassword ? "password found" : "no password", otp];
     s.textContent = parts.join(" · ");
     s.classList.add("op-ok");
   } catch (e) {
@@ -711,7 +723,7 @@ function wire() {
   $("pServer").addEventListener("input", () => { cert = null; certView("none"); });
   $("certCheck").addEventListener("click", checkCert);
   $("opEnabled").addEventListener("click", () => setOpUI($("opEnabled").getAttribute("aria-checked") !== "true"));
-  $("opSep").addEventListener("change", () => setOtpUI($("opSep").checked));
+  for (const r of document.querySelectorAll('input[name="opOtpMode"]')) r.addEventListener("change", () => setOtpUI(otpMode()));
   $("opTest").addEventListener("click", testOP);
   $("pSave").addEventListener("click", saveProfile);
   $("mPrimary").addEventListener("click", () => endMessage("primary"));
