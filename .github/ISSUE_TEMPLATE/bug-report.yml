@@ -1,0 +1,50 @@
+name: Bug report
+description: Something does not work as expected.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before you paste anything, **remove gateway addresses, usernames,
+        internal domains and certificate details**. For security problems,
+        use the private "Report a vulnerability" link instead.
+  - type: input
+    id: version
+    attributes:
+      label: FVPN version
+      placeholder: "0.9.4"
+    validations:
+      required: true
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version and build
+      description: Run `winver`.
+      placeholder: "Windows 11 24H2 (26100.2314)"
+    validations:
+      required: true
+  - type: input
+    id: fortios
+    attributes:
+      label: FortiOS version of the gateway (if known)
+      placeholder: "7.4.5"
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs (redacted)
+      description: From Settings › Logs in the app, or `fvpn-ctl logs`.
+      render: text
+  - type: checkboxes
+    id: redacted
+    attributes:
+      label: Privacy
+      options:
+        - label: I removed addresses, usernames, domains and certificate details from everything above.
+          required: true

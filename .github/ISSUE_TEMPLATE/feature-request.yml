@@ -1,0 +1,20 @@
+name: Feature request
+description: Suggest an improvement.
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Full tunnel, SAML/SSO and client certificates are already on the
+        roadmap ([TODO.md](https://github.com/mandev0/f-forti/blob/main/TODO.md)).
+        Please add a 👍 or details to an existing issue instead of opening a new one.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would you like FVPN to do?

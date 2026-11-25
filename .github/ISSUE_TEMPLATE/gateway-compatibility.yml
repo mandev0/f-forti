@@ -1,0 +1,70 @@
+name: Gateway compatibility report
+description: Tell us whether FVPN works with your FortiGate, whether it does or not.
+labels: [compatibility]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        FVPN has been tested against very few gateways. Reports like this one,
+        whether FVPN worked or not, show what to fix next. Thank you!
+  - type: dropdown
+    id: result
+    attributes:
+      label: Result
+      options:
+        - Works
+        - Connects, but something is wrong (DNS, routes, ...)
+        - Does not connect
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: FVPN version
+      placeholder: "0.9.4"
+    validations:
+      required: true
+  - type: input
+    id: fortios
+    attributes:
+      label: FortiOS version of the gateway (if known)
+      placeholder: "7.4.5"
+  - type: dropdown
+    id: login
+    attributes:
+      label: How do you sign in with FortiClient?
+      options:
+        - Username and password only
+        - Username, password and a code (FortiToken, authenticator app, e-mail, SMS)
+        - Username, password and FortiToken Mobile push
+        - SAML / SSO (browser login, Entra ID, Okta, ...)
+        - Client certificate
+        - Other / not sure
+    validations:
+      required: true
+  - type: dropdown
+    id: tunnel
+    attributes:
+      label: Is all your traffic sent through the VPN (full tunnel)?
+      options:
+        - No, only company networks (split tunnel)
+        - Yes, all traffic (full tunnel)
+        - Not sure
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs (redacted)
+      description: From Settings › Logs in the app, or `fvpn-ctl logs`.
+      render: text
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything else?
+      description: Error messages, what did not work.
+  - type: checkboxes
+    id: redacted
+    attributes:
+      label: Privacy
+      options:
+        - label: I removed addresses, usernames, domains and certificate details from everything above.
+          required: true
