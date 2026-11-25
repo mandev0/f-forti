@@ -5,8 +5,8 @@ go 1.27.4
 require (
 	fyne.io/systray v1.12.2
 	github.com/wailsapp/wails/v2 v2.17.1
-	golang.org/x/sys v0.49.0
-	golang.org/x/term v0.47.0
+	golang.org/x/sys v0.50.0
+	golang.org/x/term v0.48.0
 	golang.zx2c4.com/wireguard v0.0.0-20261024220952-b3bc704ef0ee
 	golang.zx2c4.com/wireguard/windows v1.1.1
 )
